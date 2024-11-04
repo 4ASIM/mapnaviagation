@@ -2,20 +2,44 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    >
 
-    <FrameLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/maplocationlogo" />
 
+    <TextView
+        android:id="@+id/tv_appname"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tv_appName"
+        android:textColor="@color/black"
+        app:layout_constraintEnd_toEndOf="@+id/iv_logo"
+        app:layout_constraintStart_toStartOf="@+id/iv_logo"
+        app:layout_constraintTop_toBottomOf="@id/iv_logo"
+        android:layout_marginTop="30dp"
+        android:textSize="35sp"/>
+
+    <TextView
+        android:id="@+id/appline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tv_appline"
+        android:fontFamily="@font/productsansmedium"
+        android:textColor="@color/black"
+        app:layout_constraintEnd_toEndOf="@+id/tv_appname"
+        app:layout_constraintStart_toStartOf="@+id/tv_appname"
+        app:layout_constraintTop_toBottomOf="@id/tv_appname"
+        android:layout_marginTop="10dp"
+        android:textSize="17sp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

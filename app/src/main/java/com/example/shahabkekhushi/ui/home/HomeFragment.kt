@@ -2,7 +2,6 @@ package com.example.shahabkekhushi.ui.home
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
-import com.example.shahabkekhushi.databinding.FragmentMapBinding
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
@@ -26,10 +24,20 @@ import com.mapbox.navigation.core.lifecycle.requireMapboxNavigation
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
-
 class HomeFragment : Fragment() {
 
     private val navigationLocationProvider = NavigationLocationProvider()
+    private var lastKnownLocation: com.mapbox.common.location.Location? = null
+
+    // Array of styles to cycle through
+    private val mapStyles = arrayOf(
+        Style.MAPBOX_STREETS,
+        Style.SATELLITE_STREETS,
+        Style.TRAFFIC_DAY,
+        Style.SATELLITE,
+        Style.TRAFFIC_NIGHT
+    )
+    private var currentStyleIndex = 0 // Track current style index
 
     private val locationObserver = object : LocationObserver {
         override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
@@ -38,6 +46,7 @@ class HomeFragment : Fragment() {
                 enhancedLocation,
                 locationMatcherResult.keyPoints
             )
+            lastKnownLocation = enhancedLocation
             updateCamera(enhancedLocation)
         }
 
@@ -57,13 +66,26 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS)
+        binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
         initNavigation()
+
+        // Set click listener for recenter button
+        binding.recenterButton.setOnClickListener {
+            lastKnownLocation?.let { location ->
+                updateCamera(location)
+            }
+        }
+
+        binding.changeStyleButton.setOnClickListener {
+            cycleMapStyle()
+        }
     }
 
     private val mapboxNavigation: MapboxNavigation by requireMapboxNavigation(
@@ -90,6 +112,11 @@ class HomeFragment : Fragment() {
             setLocationProvider(navigationLocationProvider)
             enabled = true
         }
+    }
+
+    private fun cycleMapStyle() {
+        currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size // Cycle to next style
+        binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
     }
 
     private fun updateCamera(location: com.mapbox.common.location.Location) {
