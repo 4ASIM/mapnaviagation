@@ -9,6 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
+import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
@@ -29,7 +30,6 @@ class HomeFragment : Fragment() {
     private val navigationLocationProvider = NavigationLocationProvider()
     private var lastKnownLocation: com.mapbox.common.location.Location? = null
 
-    // Array of styles to cycle through
     private val mapStyles = arrayOf(
         Style.MAPBOX_STREETS,
         Style.SATELLITE_STREETS,
@@ -37,7 +37,7 @@ class HomeFragment : Fragment() {
         Style.SATELLITE,
         Style.TRAFFIC_NIGHT
     )
-    private var currentStyleIndex = 0 // Track current style index
+    private var currentStyleIndex = 0
 
     private val locationObserver = object : LocationObserver {
         override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
@@ -64,9 +64,19 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
+
+        val bottomSheet = MyBottomSheetDialogFragment()
+        bottomSheet.show(parentFragmentManager, bottomSheet.tag)
+
+        binding.showBottomSheetButton.setOnClickListener {
+            val bottomSheet = MyBottomSheetDialogFragment()
+            bottomSheet.show(parentFragmentManager, bottomSheet.tag)
+        }
+
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

@@ -1,13 +1,9 @@
 package com.example.shahabkekhushi
-
 import android.content.Intent
 import com.example.shahabkekhushi.databinding.ActivityMainBinding
-
-
 import android.os.Bundle
 import android.os.Handler
 import androidx.appcompat.app.AppCompatActivity
-
 
 class MainActivity : AppCompatActivity() {
 
