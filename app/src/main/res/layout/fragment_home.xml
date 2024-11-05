@@ -5,6 +5,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment">
+    <EditText
+        android:id="@+id/query_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="Where to?"
+        android:paddingHorizontal="16dp"
+        />
+
+    <com.mapbox.search.ui.view.SearchResultsView
+        android:id="@+id/search_results_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="56dp"
+        android:paddingVertical="16dp"
+        />
 
     <com.mapbox.maps.MapView
         android:id="@+id/mapView"

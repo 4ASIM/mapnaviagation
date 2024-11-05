@@ -53,8 +53,18 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 
 
-    implementation ("com.google.android.gms:play-services-location:20.0.0")
+    implementation("com.google.android.gms:play-services-location:20.0.0")
+    implementation("com.mapbox.navigationcore:navigation:3.5.0-beta.1")
+    implementation("com.mapbox.navigationcore:ui-components:3.3.0")
 
-    implementation ("com.mapbox.navigationcore:navigation:3.5.0-beta.1")
-    implementation ("com.mapbox.navigationcore:ui-components:3.3.0")
+    //search
+    implementation ("com.mapbox.search:discover:2.5.0")
+    implementation ("com.mapbox.search:place-autocomplete:2.5.0")
+    implementation ("com.mapbox.search:mapbox-search-android:2.5.0")
+    implementation ("com.mapbox.search:offline:2.5.0")
+    implementation ("com.mapbox.search:mapbox-search-android-ui:2.5.0")
+
+
+
+
 }
