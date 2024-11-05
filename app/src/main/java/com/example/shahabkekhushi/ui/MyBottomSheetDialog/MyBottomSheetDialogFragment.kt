@@ -30,7 +30,14 @@ import com.mapbox.search.ui.view.CommonSearchViewConfiguration
 import com.mapbox.search.ui.view.DistanceUnitType
 import com.mapbox.search.ui.view.SearchResultsView
 
+interface OnSearchResultSelectedListener {
+    fun onSearchResultSelected(latitude: Double, longitude: Double)
+}
+
 class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
+
+    private var onSearchResultSelectedListener: OnSearchResultSelectedListener? = null
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,8 +48,6 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val accessToken = getString(R.string.mapbox_access_token)
 
         val queryEditText = view.findViewById<EditText>(R.id.query_edit_text)
         val searchResultsView = view.findViewById<SearchResultsView>(R.id.search_results_view)
@@ -57,7 +62,6 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
             apiType = ApiType.GEOCODING,
             settings = SearchEngineSettings()
         )
-
         val offlineSearchEngine = OfflineSearchEngine.create(
             OfflineSearchEngineSettings()
         )
@@ -65,7 +69,7 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
         val searchEngineUiAdapter = SearchEngineUiAdapter(
             view = searchResultsView,
             searchEngine = searchEngine,
-            offlineSearchEngine = offlineSearchEngine,
+            offlineSearchEngine = offlineSearchEngine
         )
 
         searchEngineUiAdapter.addSearchListener(object : SearchEngineUiAdapter.SearchListener {
@@ -74,49 +78,28 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
             }
 
-            override fun onSuggestionsShown(suggestions: List<SearchSuggestion>, responseInfo: ResponseInfo) {
-                // not implemented
-            }
-
-            override fun onSearchResultsShown(
-                suggestion: SearchSuggestion,
-                results: List<SearchResult>,
-                responseInfo: ResponseInfo
-            ) {
-                // not implemented
-            }
-
-            override fun onOfflineSearchResultsShown(results: List<OfflineSearchResult>, responseInfo: OfflineResponseInfo) {
-                // not implemented
-            }
-
-            override fun onSuggestionSelected(searchSuggestion: SearchSuggestion): Boolean {
-                return false
-            }
-
             override fun onSearchResultSelected(searchResult: SearchResult, responseInfo: ResponseInfo) {
                 showToast("SearchResult clicked: ${searchResult.name}")
+                val latitude = searchResult.coordinate.latitude()
+                val longitude = searchResult.coordinate.longitude()
+                onSearchResultSelectedListener?.onSearchResultSelected(latitude, longitude)
             }
 
-            override fun onOfflineSearchResultSelected(searchResult: OfflineSearchResult, responseInfo: OfflineResponseInfo) {
-                showToast("OfflineSearchResult clicked: ${searchResult.name}")
-            }
-
+            override fun onSuggestionsShown(suggestions: List<SearchSuggestion>, responseInfo: ResponseInfo) {}
+            override fun onSearchResultsShown(suggestion: SearchSuggestion, results: List<SearchResult>, responseInfo: ResponseInfo) {}
+            override fun onOfflineSearchResultsShown(results: List<OfflineSearchResult>, responseInfo: OfflineResponseInfo) {}
+            override fun onSuggestionSelected(searchSuggestion: SearchSuggestion): Boolean = false
+            override fun onOfflineSearchResultSelected(searchResult: OfflineSearchResult, responseInfo: OfflineResponseInfo) {}
             override fun onError(e: Exception) {
                 showToast("Error happened: $e")
             }
-
             override fun onHistoryItemClick(historyRecord: HistoryRecord) {
                 showToast("HistoryRecord clicked: ${historyRecord.name}")
             }
-
             override fun onPopulateQueryClick(suggestion: SearchSuggestion, responseInfo: ResponseInfo) {
                 queryEditText.setText(suggestion.name)
             }
-
-            override fun onFeedbackItemClick(responseInfo: ResponseInfo) {
-                // not implemented
-            }
+            override fun onFeedbackItemClick(responseInfo: ResponseInfo) {}
         })
 
         queryEditText.addTextChangedListener(object : TextWatcher {
@@ -126,11 +109,8 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
                 }
             }
 
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-                // not implemented
-            }
-
-            override fun afterTextChanged(e: Editable) { }
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+            override fun afterTextChanged(e: Editable) {}
         })
 
         if (!isPermissionGranted(permission.ACCESS_FINE_LOCATION)) {
@@ -144,23 +124,23 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
     override fun onStart() {
         super.onStart()
-
         val dialog = dialog as? BottomSheetDialog
         dialog?.behavior?.apply {
             state = BottomSheetBehavior.STATE_HALF_EXPANDED
             halfExpandedRatio = 0.2f
             isHideable = false
-            peekHeight = (requireContext().resources.displayMetrics.heightPixels * halfExpandedRatio).toInt()
         }
     }
 
     private fun isPermissionGranted(permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(
-            requireContext(), permission
-        ) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED
     }
 
     companion object {
         private const val PERMISSIONS_REQUEST_LOCATION = 0
+    }
+
+    fun setOnSearchResultSelectedListener(listener: OnSearchResultSelectedListener) {
+        this.onSearchResultSelectedListener = listener
     }
 }

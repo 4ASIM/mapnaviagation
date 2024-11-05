@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
+import com.example.shahabkekhushi.ui.MyBottomSheetDialog.OnSearchResultSelectedListener
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
@@ -25,7 +26,7 @@ import com.mapbox.navigation.core.lifecycle.requireMapboxNavigation
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private val navigationLocationProvider = NavigationLocationProvider()
     private var lastKnownLocation: com.mapbox.common.location.Location? = null
@@ -69,13 +70,23 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
 
+//        val bottomSheet = MyBottomSheetDialogFragment()
+//        bottomSheet.show(parentFragmentManager, bottomSheet.tag)
+//
+//        binding.showBottomSheetButton.setOnClickListener {
+//            val bottomSheet = MyBottomSheetDialogFragment()
+//            bottomSheet.show(parentFragmentManager, bottomSheet.tag)
+//        }
         val bottomSheet = MyBottomSheetDialogFragment()
+        bottomSheet.setOnSearchResultSelectedListener(this)
         bottomSheet.show(parentFragmentManager, bottomSheet.tag)
 
         binding.showBottomSheetButton.setOnClickListener {
             val bottomSheet = MyBottomSheetDialogFragment()
+            bottomSheet.setOnSearchResultSelectedListener(this)
             bottomSheet.show(parentFragmentManager, bottomSheet.tag)
         }
+
 
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
@@ -86,7 +97,6 @@ class HomeFragment : Fragment() {
 
         initNavigation()
 
-        // Set click listener for recenter button
         binding.recenterButton.setOnClickListener {
             lastKnownLocation?.let { location ->
                 updateCamera(location)
@@ -98,20 +108,35 @@ class HomeFragment : Fragment() {
         }
     }
 
+
     private val mapboxNavigation: MapboxNavigation by requireMapboxNavigation(
         onResumedObserver = object : MapboxNavigationObserver {
             @SuppressLint("MissingPermission")
             override fun onAttached(mapboxNavigation: MapboxNavigation) {
-                mapboxNavigation.registerLocationObserver(locationObserver)
+                mapboxNavigation.registerLocationObserver(object : LocationObserver {
+                    override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
+                        val enhancedLocation = locationMatcherResult.enhancedLocation
+                        navigationLocationProvider.changePosition(
+                            enhancedLocation,
+                            locationMatcherResult.keyPoints
+                        )
+                        lastKnownLocation = enhancedLocation
+                        updateCamera(enhancedLocation)
+                        mapboxNavigation.unregisterLocationObserver(this)
+                    }
+
+                    override fun onNewRawLocation(rawLocation: com.mapbox.common.location.Location) {}
+                })
                 mapboxNavigation.startTripSession()
             }
 
             override fun onDetached(mapboxNavigation: MapboxNavigation) {
-                mapboxNavigation.unregisterLocationObserver(locationObserver)
+
             }
         },
         onInitialize = this::initNavigation
     )
+
 
     private fun initNavigation() {
         if (_binding == null) return
@@ -125,19 +150,32 @@ class HomeFragment : Fragment() {
     }
 
     private fun cycleMapStyle() {
-        currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size // Cycle to next style
+        currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
     }
 
     private fun updateCamera(location: com.mapbox.common.location.Location) {
-        val mapAnimationOptions = MapAnimationOptions.Builder().duration(1500L).build()
+        val point = Point.fromLngLat(location.longitude, location.latitude)
+        val cameraOptions = CameraOptions.Builder()
+            .center(point)
+            .zoom(14.0)
+            .build()
+
         binding.mapView.camera.easeTo(
-            CameraOptions.Builder()
-                .center(Point.fromLngLat(location.longitude, location.latitude))
-                .zoom(14.0)
-                .padding(EdgeInsets(0.0, 0.0, 0.0, 0.0))
-                .build(),
-            mapAnimationOptions
+            cameraOptions,
+            MapAnimationOptions.Builder().duration(1500L).build()
+        )
+    }
+    override fun onSearchResultSelected(latitude: Double, longitude: Double) {
+        val point = Point.fromLngLat(longitude, latitude)
+        val cameraOptions = CameraOptions.Builder()
+            .center(point)
+            .zoom(14.0)
+            .build()
+
+        binding.mapView.camera.easeTo(
+            cameraOptions,
+            MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
 
