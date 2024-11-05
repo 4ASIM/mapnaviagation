@@ -202,14 +202,14 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
         val point = Point.fromLngLat(longitude, latitude)
-
+// Clear any previous annotations
         pointAnnotationManager?.deleteAll()
 
-
+        // Load the icon as a bitmap and resize it
         val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
-        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false) // Adjust width and height as needed
 
-
+        // Create a new PointAnnotationOptions with the search result coordinates
         val pointAnnotationOptions = PointAnnotationOptions()
             .withPoint(point)
             .withIconImage(resizedBitmap)
