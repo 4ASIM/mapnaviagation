@@ -1,6 +1,8 @@
 package com.example.shahabkekhushi.ui.home
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +10,7 @@ import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import com.example.shahabkekhushi.R
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.OnSearchResultSelectedListener
@@ -17,6 +20,10 @@ import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
@@ -69,6 +76,8 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
+
+        initPointAnnotationManager()
 
 //        val bottomSheet = MyBottomSheetDialogFragment()
 //        bottomSheet.show(parentFragmentManager, bottomSheet.tag)
@@ -136,6 +145,23 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         },
         onInitialize = this::initNavigation
     )
+    private fun addPointAnnotation() {
+        // Create an instance of the Annotation API and get the PointAnnotationManager
+        val annotationApi = binding.mapView.annotations
+        val pointAnnotationManager = annotationApi.createPointAnnotationManager()
+
+        // Load the icon as a bitmap and resize it
+        val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.location_pin_svgrepo_com)
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 30, 30, false) // Adjust width and height as needed
+
+        // Set options for the resulting point annotation
+        val pointAnnotationOptions = PointAnnotationOptions()
+            .withPoint(Point.fromLngLat(18.06, 59.31))
+            .withIconImage(resizedBitmap)
+
+        // Add the point annotation to the map
+        pointAnnotationManager.create(pointAnnotationOptions)
+    }
 
 
     private fun initNavigation() {
@@ -148,7 +174,10 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             enabled = true
         }
     }
-
+    private fun initPointAnnotationManager() {
+        // Initialize PointAnnotationManager once after the style is loaded
+        pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
+    }
     private fun cycleMapStyle() {
         currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
@@ -166,8 +195,29 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
+
+    private var pointAnnotationManager: PointAnnotationManager? = null
+
+
+
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
         val point = Point.fromLngLat(longitude, latitude)
+
+        pointAnnotationManager?.deleteAll()
+
+
+        val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
+
+
+        val pointAnnotationOptions = PointAnnotationOptions()
+            .withPoint(point)
+            .withIconImage(resizedBitmap)
+
+        // Add the annotation to the map
+        pointAnnotationManager?.create(pointAnnotationOptions)
+
+        // Update the camera to center on the searched location
         val cameraOptions = CameraOptions.Builder()
             .center(point)
             .zoom(14.0)
@@ -181,6 +231,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        pointAnnotationManager?.deleteAll() // Clean up annotations
         _binding = null
     }
 }
