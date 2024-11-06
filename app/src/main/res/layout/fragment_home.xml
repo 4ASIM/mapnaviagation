@@ -48,20 +48,7 @@
         app:layout_constraintTop_toTopOf="@+id/mapView"
         app:srcCompat="@drawable/search_alt_1_svgrepo_com" />
 
-    <TextView
-        android:id="@+id/etaTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:text="ETA: -- min"
-        app:layout_constraintBottom_toBottomOf="@+id/mapView" />
 
-    <TextView
-        android:id="@+id/distanceTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Distance: -- km"
-        android:layout_margin="8dp" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

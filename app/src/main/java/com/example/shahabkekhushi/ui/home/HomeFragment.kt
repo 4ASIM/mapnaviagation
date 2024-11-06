@@ -17,11 +17,15 @@ import com.example.shahabkekhushi.api
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.OnSearchResultSelectedListener
-
+import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.style.layers.addLayer
+import com.mapbox.maps.extension.style.layers.generated.lineLayer
+import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
@@ -42,12 +46,23 @@ import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
 
 class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private val navigationLocationProvider = NavigationLocationProvider()
     private var lastKnownLocation: com.mapbox.common.location.Location? = null
+    private val client = OkHttpClient() // Initialize OkHttpClient
 
+    private val mapboxAccessToken by lazy {
+        getString(R.string.mapbox_access_token) // Retrieve the Mapbox access token from resources
+    }
     private val mapStyles = arrayOf(
         Style.MAPBOX_STREETS,
         Style.SATELLITE_STREETS,
@@ -208,92 +223,85 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private var pointAnnotationManager: PointAnnotationManager? = null
 
+    private fun drawRoute(points: List<Point>) {
+        val lineString = LineString.fromLngLats(points)
+        binding.mapView.mapboxMap.getStyle { style ->
+            style.addSource(geoJsonSource("route-source") {
+                geometry(lineString)
+            })
+            style.addLayer(lineLayer("route-layer", "route-source") {
+                lineColor("#0019e3")
+                lineWidth(5.0)
+            })
+        }
+    }
+
+    private fun fetchRoute(origin: Point, destination: Point) {
+        val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
+                "${origin.longitude()},${origin.latitude()};" +
+                "${destination.longitude()},${destination.latitude()}" +
+                "?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=$mapboxAccessToken"
+
+        val request = Request.Builder().url(url).build()
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("HomeFragment", "Error fetching route: ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    responseBody?.let {
+                        val json = JSONObject(it)
+                        val routes = json.getJSONArray("routes")
+                        if (routes.length() > 0) {
+                            val route = routes.getJSONObject(0)
+                            val geometry = route.getJSONObject("geometry")
+                            val coordinates = geometry.getJSONArray("coordinates")
+                            val points = mutableListOf<Point>()
+                            for (i in 0 until coordinates.length()) {
+                                val coord = coordinates.getJSONArray(i)
+                                points.add(Point.fromLngLat(coord.getDouble(0), coord.getDouble(1)))
+                            }
+                            drawRoute(points)
+                        }
+                    }
+                } else {
+                    Log.e("HomeFragment", "Request failed: ${response.code} ${response.message}")
+                }
+            }
+        })
+    }
+
 
 
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
-        val startPoint = Point.fromLngLat(lastKnownLocation?.longitude ?: 0.0, lastKnownLocation?.latitude ?: 0.0)
-        val endPoint = Point.fromLngLat(longitude, latitude)
+        val destination = Point.fromLngLat(longitude, latitude)
 
-        // Clear previous annotations
-        pointAnnotationManager?.deleteAll()
-
-        // Add the destination point annotation
-        val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
-        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
-        val pointAnnotationOptions = PointAnnotationOptions()
-            .withPoint(endPoint)
-            .withIconImage(resizedBitmap)
-
-        pointAnnotationManager?.create(pointAnnotationOptions)
-
-        // Request directions from current location to selected location
-        CoroutineScope(Dispatchers.IO).launch {
-            val data = api.builder.getDirections(
-                startPoint.latitude().toString(),
-                startPoint.longitude().toString(),
-                endPoint.latitude().toString(),
-                endPoint.longitude().toString(),
-                "sk.eyJ1IjoiYWxpMTEyMjMzNDQiLCJhIjoiY20yeWR1NWx1MDBqeDJxczU5dHM5dW9sNiJ9.Zf5eESNgDLxQF2ORhvIv1g"
-            )
-
-            if (data.isSuccessful) {
-                Log.v("whatstheerror", data.raw().toString())
-                launch(Dispatchers.Main) {
-                    val annotationApi = binding.mapView.annotations
-                    val polylineAnnotationManager = annotationApi!!.createPolylineAnnotationManager()
-                    val points2 = arrayListOf<Point>()
-
-                    if (data.body()!!.routes.isNotEmpty()) {
-                        val route = data.body()!!.routes[0]!!
-                        val coordinates = route.geometry.coordinates
-                        Log.v("RouteCoordinates", coordinates.toString())
-
-                        // Add points for polyline annotation
-                        for (i in coordinates.indices) {
-                            points2.add(Point.fromLngLat(coordinates[i][0], coordinates[i][1]))
-                        }
-
-                        // Create the polyline annotation
-                        val polylineAnnotationOptions = PolylineAnnotationOptions()
-                            .withPoints(points2)
-                            .withLineColor("#ee4e8b")
-                            .withLineWidth(1.0)
-
-                        polylineAnnotationManager?.create(polylineAnnotationOptions)
-
-                        // Extract distance and duration
-                        val distance = route.distance // Distance in meters
-                        val duration = route.duration // Duration in seconds
-
-                        // Convert distance to kilometers
-                        val distanceInKm = distance / 1000.0
-
-                        // Convert duration to minutes
-                        val durationInMinutes = duration / 60.0
-
-                        // Show the distance and duration (can be updated on the UI)
-                        Toast.makeText(
-                            requireContext(),
-                            "Distance: ${String.format("%.2f", distanceInKm)} km\nTime: ${String.format("%.2f", durationInMinutes)} min",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "No route found, try again",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } else {
-                // Handle error when the API call fails
-                Toast.makeText(requireContext(), "Failed to get directions", Toast.LENGTH_SHORT).show()
-            }
+        // Fetch the route from the current location to the destination
+        lastKnownLocation?.let { currentLocation ->
+            val origin = Point.fromLngLat(currentLocation.longitude, currentLocation.latitude)
+            fetchRoute(origin, destination)
         }
 
-        // Move camera to the new location with animation
+        // Clear any previous annotations
+        pointAnnotationManager?.deleteAll()
+
+        // Load the icon as a bitmap and resize it
+        val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
+
+        // Create a new PointAnnotationOptions with the search result coordinates
+        val pointAnnotationOptions = PointAnnotationOptions()
+            .withPoint(destination)
+            .withIconImage(resizedBitmap)
+
+        // Add the annotation to the map
+        pointAnnotationManager?.create(pointAnnotationOptions)
+
+        // Update the camera to center on the searched location
         val cameraOptions = CameraOptions.Builder()
-            .center(endPoint)
+            .center(destination)
             .zoom(14.0)
             .build()
 
@@ -302,6 +310,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
+
 
 
 
