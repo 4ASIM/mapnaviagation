@@ -69,10 +69,10 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
     private val mapStyles = arrayOf(
         Style.MAPBOX_STREETS,
         Style.SATELLITE_STREETS,
-        Style.TRAFFIC_DAY,
-        Style.SATELLITE,
-        Style.TRAFFIC_NIGHT
+        "mapbox://styles/mapbox/traffic-day-v2", // Custom URI
+        "mapbox://styles/mapbox/satellite-streets-v11" // Custom URI
     )
+
     private var currentStyleIndex = 0
 
     private val locationObserver = object : LocationObserver {
@@ -207,9 +207,24 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
     }
     private fun cycleMapStyle() {
+        // Switch to the next style in the array
         currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size
-        binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
+
+        // Apply the new style
+        binding.mapView.mapboxMap.loadStyleUri(mapStyles[currentStyleIndex]) { style ->
+            // After the style is loaded, re-draw the route if it exists
+            routePoints?.let { points ->
+                drawRoute(points) // Redraw the route on the new style
+            }
+        }
     }
+
+    private var routePoints: List<Point>? = null
+
+//    private fun cycleMapStyle() {
+//        currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size
+//        binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
+//    }
 
     private fun updateCamera(location: com.mapbox.common.location.Location) {
         val point = Point.fromLngLat(location.longitude, location.latitude)
@@ -229,7 +244,6 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
     private fun drawRoute(points: List<Point>) {
         val lineString = LineString.fromLngLats(points)
         binding.mapView.mapboxMap.getStyle { style ->
-
             // Check if the source already exists
             if (style.getSource("route-source") == null) {
                 style.addSource(geoJsonSource("route-source") {
@@ -248,13 +262,27 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                 })
             }
         }
+        // Store the points to re-draw later when the style changes
+        routePoints = points
     }
 
 
 
+
     private fun fetchRoute(origin: Point, destination: Point) {
-        // Reload style completely to reset sources and layers
-        binding.mapView.mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
+        // Remove the old route source and layer if they exist
+        binding.mapView.mapboxMap.getStyle { style ->
+            // Make sure the route source and layer are cleared before fetching the new route
+            val source = style.getSource("route-source")
+            if (source != null) {
+                style.removeStyleSource("route-source")
+            }
+
+            val layer = style.getLayer("route-layer")
+            if (layer != null) {
+                style.removeStyleLayer("route-layer")
+            }
+        }
 
         // Fetch the new route
         val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
@@ -283,7 +311,8 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                                 val coord = coordinates.getJSONArray(i)
                                 points.add(Point.fromLngLat(coord.getDouble(0), coord.getDouble(1)))
                             }
-                            drawRoute(points) // Draw the new route
+                            // Draw the route and store the points
+                            drawRoute(points)
                         }
                     }
                 } else {
