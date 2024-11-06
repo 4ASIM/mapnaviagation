@@ -24,8 +24,11 @@ import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
+import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.extension.style.sources.getSource
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
@@ -226,17 +229,34 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
     private fun drawRoute(points: List<Point>) {
         val lineString = LineString.fromLngLats(points)
         binding.mapView.mapboxMap.getStyle { style ->
-            style.addSource(geoJsonSource("route-source") {
-                geometry(lineString)
-            })
-            style.addLayer(lineLayer("route-layer", "route-source") {
-                lineColor("#0019e3")
-                lineWidth(5.0)
-            })
+
+            // Check if the source already exists
+            if (style.getSource("route-source") == null) {
+                style.addSource(geoJsonSource("route-source") {
+                    geometry(lineString)
+                })
+            } else {
+                // If source exists, update the geometry of the existing source
+                (style.getSource("route-source") as GeoJsonSource).setGeoJson(lineString)
+            }
+
+            // Check if the layer exists, if not, add it
+            if (style.getLayer("route-layer") == null) {
+                style.addLayer(lineLayer("route-layer", "route-source") {
+                    lineColor("#0019e3")
+                    lineWidth(5.0)
+                })
+            }
         }
     }
 
+
+
     private fun fetchRoute(origin: Point, destination: Point) {
+        // Reload style completely to reset sources and layers
+        binding.mapView.mapboxMap.loadStyleUri(Style.MAPBOX_STREETS)
+
+        // Fetch the new route
         val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
                 "${origin.longitude()},${origin.latitude()};" +
                 "${destination.longitude()},${destination.latitude()}" +
@@ -263,7 +283,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                                 val coord = coordinates.getJSONArray(i)
                                 points.add(Point.fromLngLat(coord.getDouble(0), coord.getDouble(1)))
                             }
-                            drawRoute(points)
+                            drawRoute(points) // Draw the new route
                         }
                     }
                 } else {
@@ -272,6 +292,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             }
         })
     }
+
 
 
 
@@ -314,9 +335,14 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
 
 
+
     override fun onDestroyView() {
         super.onDestroyView()
         pointAnnotationManager?.deleteAll() // Clean up annotations
         _binding = null
     }
+}
+
+private fun GeoJsonSource.setGeoJson(geoJson: LineString?) {
+
 }
