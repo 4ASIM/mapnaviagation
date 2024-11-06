@@ -4,9 +4,11 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -14,6 +16,7 @@ import com.example.shahabkekhushi.R
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.OnSearchResultSelectedListener
+import com.example.week7maps.api
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
@@ -23,7 +26,9 @@ import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
@@ -33,6 +38,10 @@ import com.mapbox.navigation.core.lifecycle.requireMapboxNavigation
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private val navigationLocationProvider = NavigationLocationProvider()
@@ -201,25 +210,65 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
 
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
-        val point = Point.fromLngLat(longitude, latitude)
-// Clear any previous annotations
+        val startPoint = Point.fromLngLat(lastKnownLocation?.longitude ?: 0.0, lastKnownLocation?.latitude ?: 0.0)
+        val endPoint = Point.fromLngLat(longitude, latitude)
+
+        // Clear previous annotations
         pointAnnotationManager?.deleteAll()
 
-        // Load the icon as a bitmap and resize it
+        // Add the destination point annotation
         val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
-        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false) // Adjust width and height as needed
-
-        // Create a new PointAnnotationOptions with the search result coordinates
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
         val pointAnnotationOptions = PointAnnotationOptions()
-            .withPoint(point)
+            .withPoint(endPoint)
             .withIconImage(resizedBitmap)
 
-        // Add the annotation to the map
         pointAnnotationManager?.create(pointAnnotationOptions)
 
-        // Update the camera to center on the searched location
+        // Request directions from current location to selected location
+        CoroutineScope(Dispatchers.IO).launch {
+            val data = api.builder.getDirections(
+                startPoint.latitude().toString(),
+                startPoint.longitude().toString(),
+                endPoint.latitude().toString(),
+                endPoint.longitude().toString(),
+                "sk.eyJ1IjoiYWxpMTEyMjMzNDQiLCJhIjoiY20yeWR1NWx1MDBqeDJxczU5dHM5dW9sNiJ9.Zf5eESNgDLxQF2ORhvIv1g"
+            )
+
+            if (data.isSuccessful) {
+                Log.v("whatstheerror", data.raw().toString())
+                launch(Dispatchers.Main) {
+                    val annotationApi = binding.mapView.annotations
+                    val polylineAnnotationManager = annotationApi!!.createPolylineAnnotationManager()
+                    val points2 = arrayListOf<Point>()
+
+                    if (data.body()!!.routes.isNotEmpty()) {
+                        val coordinates = data.body()!!.routes[0]!!.geometry.coordinates
+                        Log.v("RouteCoordinates", coordinates.toString())
+                        for (i in coordinates.indices) {
+                            points2.add(Point.fromLngLat(coordinates[i][0], coordinates[i][1]))
+                        }
+
+                        val polylineAnnotationOptions = PolylineAnnotationOptions()
+                            .withPoints(points2)
+                            .withLineColor("#ee4e8b")
+                            .withLineWidth(1.0)
+
+                        polylineAnnotationManager?.create(polylineAnnotationOptions)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "No route, Try again",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+
+        // Move camera to the new location with animation
         val cameraOptions = CameraOptions.Builder()
-            .center(point)
+            .center(endPoint)
             .zoom(14.0)
             .build()
 
@@ -228,6 +277,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
