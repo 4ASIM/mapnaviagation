@@ -17,6 +17,7 @@ import com.example.shahabkekhushi.api
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.OnSearchResultSelectedListener
+
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.EdgeInsets
@@ -243,26 +244,50 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                     val points2 = arrayListOf<Point>()
 
                     if (data.body()!!.routes.isNotEmpty()) {
-                        val coordinates = data.body()!!.routes[0]!!.geometry.coordinates
+                        val route = data.body()!!.routes[0]!!
+                        val coordinates = route.geometry.coordinates
                         Log.v("RouteCoordinates", coordinates.toString())
+
+                        // Add points for polyline annotation
                         for (i in coordinates.indices) {
                             points2.add(Point.fromLngLat(coordinates[i][0], coordinates[i][1]))
                         }
 
+                        // Create the polyline annotation
                         val polylineAnnotationOptions = PolylineAnnotationOptions()
                             .withPoints(points2)
                             .withLineColor("#ee4e8b")
                             .withLineWidth(1.0)
 
                         polylineAnnotationManager?.create(polylineAnnotationOptions)
+
+                        // Extract distance and duration
+                        val distance = route.distance // Distance in meters
+                        val duration = route.duration // Duration in seconds
+
+                        // Convert distance to kilometers
+                        val distanceInKm = distance / 1000.0
+
+                        // Convert duration to minutes
+                        val durationInMinutes = duration / 60.0
+
+                        // Show the distance and duration (can be updated on the UI)
+                        Toast.makeText(
+                            requireContext(),
+                            "Distance: ${String.format("%.2f", distanceInKm)} km\nTime: ${String.format("%.2f", durationInMinutes)} min",
+                            Toast.LENGTH_LONG
+                        ).show()
                     } else {
                         Toast.makeText(
                             requireContext(),
-                            "No route, Try again",
+                            "No route found, try again",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
+            } else {
+                // Handle error when the API call fails
+                Toast.makeText(requireContext(), "Failed to get directions", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -277,6 +302,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
+
 
 
     override fun onDestroyView() {
