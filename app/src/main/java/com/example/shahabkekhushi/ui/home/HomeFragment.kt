@@ -219,6 +219,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         }
     }
 
+
+
+
     private var routePoints: List<Point>? = null
 
 //    private fun cycleMapStyle() {
@@ -250,11 +253,11 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                     geometry(lineString)
                 })
             } else {
-                // If source exists, update the geometry of the existing source
-                (style.getSource("route-source") as GeoJsonSource).setGeoJson(lineString)
+                // Update the existing source's geometry
+                (style.getSource("route-source") as GeoJsonSource).geometry(lineString)
             }
 
-            // Check if the layer exists, if not, add it
+            // Check if the layer exists; if not, add it
             if (style.getLayer("route-layer") == null) {
                 style.addLayer(lineLayer("route-layer", "route-source") {
                     lineColor("#0019e3")
@@ -262,29 +265,15 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                 })
             }
         }
-        // Store the points to re-draw later when the style changes
-        routePoints = points
+        routePoints = points // Save the route points for re-drawing later
     }
 
 
 
 
+
     private fun fetchRoute(origin: Point, destination: Point) {
-        // Remove the old route source and layer if they exist
-        binding.mapView.mapboxMap.getStyle { style ->
-            // Make sure the route source and layer are cleared before fetching the new route
-            val source = style.getSource("route-source")
-            if (source != null) {
-                style.removeStyleSource("route-source")
-            }
-
-            val layer = style.getLayer("route-layer")
-            if (layer != null) {
-                style.removeStyleLayer("route-layer")
-            }
-        }
-
-        // Fetch the new route
+        // Fetch the new route from the API
         val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
                 "${origin.longitude()},${origin.latitude()};" +
                 "${destination.longitude()},${destination.latitude()}" +
@@ -311,8 +300,11 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                                 val coord = coordinates.getJSONArray(i)
                                 points.add(Point.fromLngLat(coord.getDouble(0), coord.getDouble(1)))
                             }
-                            // Draw the route and store the points
-                            drawRoute(points)
+                            // Draw the route immediately after fetching it
+                            routePoints = points
+                            requireActivity().runOnUiThread {
+                                drawRoute(points) // Immediately display the route
+                            }
                         }
                     }
                 } else {
@@ -325,31 +317,31 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
 
 
+
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
         val destination = Point.fromLngLat(longitude, latitude)
 
-        // Fetch the route from the current location to the destination
+        // Fetch and draw the route from current location to the destination
         lastKnownLocation?.let { currentLocation ->
             val origin = Point.fromLngLat(currentLocation.longitude, currentLocation.latitude)
-            fetchRoute(origin, destination)
+            fetchRoute(origin, destination) // Calls fetchRoute to update immediately
         }
 
         // Clear any previous annotations
         pointAnnotationManager?.deleteAll()
 
-        // Load the icon as a bitmap and resize it
+        // Load and resize icon
         val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
         val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
 
-        // Create a new PointAnnotationOptions with the search result coordinates
+        // Add the destination marker
         val pointAnnotationOptions = PointAnnotationOptions()
             .withPoint(destination)
             .withIconImage(resizedBitmap)
 
-        // Add the annotation to the map
         pointAnnotationManager?.create(pointAnnotationOptions)
 
-        // Update the camera to center on the searched location
+        // Center camera on the searched location
         val cameraOptions = CameraOptions.Builder()
             .center(destination)
             .zoom(14.0)
@@ -360,6 +352,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
+
 
 
 
