@@ -64,6 +64,9 @@ dependencies {
     implementation ("com.mapbox.search:offline:2.5.0")
     implementation ("com.mapbox.search:mapbox-search-android-ui:2.5.0")
 
+    implementation ("com.airbnb.android:lottie:5.0.3")
+
+
 
 
 

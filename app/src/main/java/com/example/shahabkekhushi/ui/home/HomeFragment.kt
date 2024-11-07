@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -106,6 +107,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             selectedMode = "driving"
             Log.d("HomeFragment", "Selected mode: $selectedMode")
 
+            // Update the UI to highlight the selected mode
+            highlightSelectedCard(binding.cvDriving, binding.cvWalking, binding.cvCycling)
+
             // Ensure route is updated with the selected mode
             lastKnownLocation?.let { location ->
                 val origin = Point.fromLngLat(location.longitude, location.latitude)
@@ -117,6 +121,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         binding.cvWalking.setOnClickListener {
             selectedMode = "walking"
             Log.d("HomeFragment", "Selected mode: $selectedMode")
+
+            // Update the UI to highlight the selected mode
+            highlightSelectedCard(binding.cvWalking, binding.cvDriving, binding.cvCycling)
 
             // Ensure route is updated with the selected mode
             lastKnownLocation?.let { location ->
@@ -130,13 +137,18 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             selectedMode = "cycling"
             Log.d("HomeFragment", "Selected mode: $selectedMode")
 
+            // Update the UI to highlight the selected mode
+            highlightSelectedCard(binding.cvCycling, binding.cvDriving, binding.cvWalking)
+
             // Ensure route is updated with the selected mode
             lastKnownLocation?.let { location ->
                 val origin = Point.fromLngLat(location.longitude, location.latitude)
-                val destination = routePoints?.lastOrNull() ?: return@let // If there's no route yet, do nothing
+                val destination = routePoints?.lastOrNull() ?: return@let
                 fetchRoute(origin, destination, selectedMode)
             }
         }
+
+
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -179,11 +191,31 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         },
         onInitialize = this::initNavigation
     )
+
+
+    // Function to highlight the selected card and reset others
+    private fun highlightSelectedCard(selectedCard: CardView, vararg otherCards: CardView) {
+        // Apply selected border to the chosen CardView
+        selectedCard.setBackgroundResource(R.drawable.cardview_border)
+
+        // Reset background for other CardViews
+        otherCards.forEach { card ->
+            card.setBackgroundResource(R.drawable.cardview_border2)
+        }
+    }
+    private fun showLoadingAnimation() {
+        binding.loadingAnimationView.visibility = View.VISIBLE
+    }
+
+    private fun hideLoadingAnimation() {
+        binding.loadingAnimationView.visibility = View.GONE
+    }
+
     private fun addPointAnnotation() {
         val annotationApi = binding.mapView.annotations
         val pointAnnotationManager = annotationApi.createPointAnnotationManager()
 
-        val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.location_pin_svgrepo_com)
+        val originalBitmap = BitmapFactory.decodeResource(resources, R.raw.mapanimation)
         val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 30, 30, false) // Adjust width and height as needed
 
         val pointAnnotationOptions = PointAnnotationOptions()
@@ -254,6 +286,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
 
     private fun fetchRoute(origin: Point, destination: Point, mode: String) {
+        showLoadingAnimation()
         val url = "https://api.mapbox.com/directions/v5/mapbox/$mode/" +
                 "${origin.longitude()},${origin.latitude()};" +
                 "${destination.longitude()},${destination.latitude()}" +
@@ -262,11 +295,13 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         val request = Request.Builder().url(url).build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
+
                 Log.e("HomeFragment", "Error fetching route: ${e.message}")
             }
 
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
+
                     val responseBody = response.body?.string()
                     responseBody?.let {
                         val json = JSONObject(it)
@@ -300,7 +335,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
                             routePoints = points
                             requireActivity().runOnUiThread {
+                                hideLoadingAnimation()
                                 drawRoute(points)
+
                             }
                         }
                     }
