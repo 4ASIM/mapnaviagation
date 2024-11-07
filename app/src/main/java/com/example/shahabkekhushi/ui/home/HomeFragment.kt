@@ -88,6 +88,8 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
+
+    private var selectedMode = "walking"
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
@@ -99,6 +101,41 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             val bottomSheet = MyBottomSheetDialogFragment()
             bottomSheet.setOnSearchResultSelectedListener(this)
             bottomSheet.show(parentFragmentManager, bottomSheet.tag)
+        }
+        binding.cvDriving.setOnClickListener {
+            selectedMode = "driving"
+            Log.d("HomeFragment", "Selected mode: $selectedMode")
+
+            // Ensure route is updated with the selected mode
+            lastKnownLocation?.let { location ->
+                val origin = Point.fromLngLat(location.longitude, location.latitude)
+                val destination = routePoints?.lastOrNull() ?: return@let
+                fetchRoute(origin, destination, selectedMode)
+            }
+        }
+
+        binding.cvWalking.setOnClickListener {
+            selectedMode = "walking"
+            Log.d("HomeFragment", "Selected mode: $selectedMode")
+
+            // Ensure route is updated with the selected mode
+            lastKnownLocation?.let { location ->
+                val origin = Point.fromLngLat(location.longitude, location.latitude)
+                val destination = routePoints?.lastOrNull() ?: return@let
+                fetchRoute(origin, destination, selectedMode)
+            }
+        }
+
+        binding.cvCycling.setOnClickListener {
+            selectedMode = "cycling"
+            Log.d("HomeFragment", "Selected mode: $selectedMode")
+
+            // Ensure route is updated with the selected mode
+            lastKnownLocation?.let { location ->
+                val origin = Point.fromLngLat(location.longitude, location.latitude)
+                val destination = routePoints?.lastOrNull() ?: return@let // If there's no route yet, do nothing
+                fetchRoute(origin, destination, selectedMode)
+            }
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
@@ -215,8 +252,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         routePoints = points
     }
 
-    private fun fetchRoute(origin: Point, destination: Point) {
-        val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
+
+    private fun fetchRoute(origin: Point, destination: Point, mode: String) {
+        val url = "https://api.mapbox.com/directions/v5/mapbox/$mode/" +
                 "${origin.longitude()},${origin.latitude()};" +
                 "${destination.longitude()},${destination.latitude()}" +
                 "?alternatives=true&geometries=geojson&language=en&overview=full&steps=true&access_token=$mapboxAccessToken"
@@ -253,6 +291,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                                 binding.distanceTextView.visibility = View.VISIBLE
                                 binding.timeTextView.visibility = View.VISIBLE
                             }
+
                             val points = mutableListOf<Point>()
                             for (i in 0 until coordinates.length()) {
                                 val coord = coordinates.getJSONArray(i)
@@ -272,11 +311,12 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         })
     }
 
+
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
         val destination = Point.fromLngLat(longitude, latitude)
         lastKnownLocation?.let { currentLocation ->
             val origin = Point.fromLngLat(currentLocation.longitude, currentLocation.latitude)
-            fetchRoute(origin, destination)
+            fetchRoute(origin, destination, selectedMode)
         }
 
         pointAnnotationManager?.deleteAll()
@@ -307,4 +347,5 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 }
 
 private fun GeoJsonSource.setGeoJson(geoJson: LineString?) {
+
 }

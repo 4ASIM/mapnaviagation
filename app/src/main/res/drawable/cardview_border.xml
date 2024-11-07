@@ -1,0 +1,21 @@
+<!-- res/drawable/cardview_border.xml -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Border layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="2dp"
+            android:color="@color/black" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+
+    <!-- Card background layer -->
+    <item android:left="1dp" android:right="1dp" android:top="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/black" /> <!-- Background color of the CardView -->
+            <corners android:radius="20dp" /> <!-- Match CardView corner radius -->
+        </shape>
+    </item>
+</layer-list>
