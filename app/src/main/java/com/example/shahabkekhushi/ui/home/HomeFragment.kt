@@ -90,7 +90,7 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         return binding.root
     }
 
-    private var selectedMode = "walking"
+    private var selectedMode = "driving"
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
