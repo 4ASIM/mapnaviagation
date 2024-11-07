@@ -107,10 +107,8 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             selectedMode = "driving"
             Log.d("HomeFragment", "Selected mode: $selectedMode")
 
-            // Update the UI to highlight the selected mode
             highlightSelectedCard(binding.cvDriving, binding.cvWalking, binding.cvCycling)
 
-            // Ensure route is updated with the selected mode
             lastKnownLocation?.let { location ->
                 val origin = Point.fromLngLat(location.longitude, location.latitude)
                 val destination = routePoints?.lastOrNull() ?: return@let
@@ -122,10 +120,8 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             selectedMode = "walking"
             Log.d("HomeFragment", "Selected mode: $selectedMode")
 
-            // Update the UI to highlight the selected mode
             highlightSelectedCard(binding.cvWalking, binding.cvDriving, binding.cvCycling)
 
-            // Ensure route is updated with the selected mode
             lastKnownLocation?.let { location ->
                 val origin = Point.fromLngLat(location.longitude, location.latitude)
                 val destination = routePoints?.lastOrNull() ?: return@let
@@ -137,10 +133,8 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             selectedMode = "cycling"
             Log.d("HomeFragment", "Selected mode: $selectedMode")
 
-            // Update the UI to highlight the selected mode
             highlightSelectedCard(binding.cvCycling, binding.cvDriving, binding.cvWalking)
 
-            // Ensure route is updated with the selected mode
             lastKnownLocation?.let { location ->
                 val origin = Point.fromLngLat(location.longitude, location.latitude)
                 val destination = routePoints?.lastOrNull() ?: return@let
@@ -192,13 +186,10 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         onInitialize = this::initNavigation
     )
 
-
-    // Function to highlight the selected card and reset others
     private fun highlightSelectedCard(selectedCard: CardView, vararg otherCards: CardView) {
-        // Apply selected border to the chosen CardView
+
         selectedCard.setBackgroundResource(R.drawable.cardview_border)
 
-        // Reset background for other CardViews
         otherCards.forEach { card ->
             card.setBackgroundResource(R.drawable.cardview_border2)
         }

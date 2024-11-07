@@ -2,8 +2,11 @@ package com.example.shahabkekhushi.ui.MyBottomSheetDialog
 
 import android.Manifest.permission
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Bundle
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -37,7 +40,8 @@ interface OnSearchResultSelectedListener {
 class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
     private var onSearchResultSelectedListener: OnSearchResultSelectedListener? = null
-
+    private val REQUEST_ENABLE_LOCATION = 1
+    private val PERMISSIONS_REQUEST_LOCATION = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -102,6 +106,7 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
             override fun onFeedbackItemClick(responseInfo: ResponseInfo) {}
         })
 
+        // Add TextWatcher to trigger search when text changes
         queryEditText.addTextChangedListener(object : TextWatcher {
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 if (s.isNotEmpty()) {
@@ -119,6 +124,9 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
                 arrayOf(permission.ACCESS_FINE_LOCATION, permission.ACCESS_COARSE_LOCATION),
                 PERMISSIONS_REQUEST_LOCATION
             )
+            checkAndPromptForLocation()
+        } else {
+            checkAndPromptForLocation()
         }
     }
 
@@ -132,14 +140,53 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
         }
     }
 
+    // Function to check if location is enabled
+    private fun checkAndPromptForLocation() {
+        val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+            startActivityForResult(intent, REQUEST_ENABLE_LOCATION)
+        }
+    }
+
+    // Function to check permission status
     private fun isPermissionGranted(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED
     }
 
-    companion object {
-        private const val PERMISSIONS_REQUEST_LOCATION = 0
+    // Handle permission result
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            PERMISSIONS_REQUEST_LOCATION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(requireContext(), "Location permission granted", Toast.LENGTH_SHORT).show()
+                    checkAndPromptForLocation()  // Check if location is enabled after permission is granted
+                } else {
+                    Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
+    // Handle result of location settings prompt
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_LOCATION) {
+            val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                Toast.makeText(requireContext(), "Location is still disabled", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Location is now enabled", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Function to set the listener for search result selection
     fun setOnSearchResultSelectedListener(listener: OnSearchResultSelectedListener) {
         this.onSearchResultSelectedListener = listener
     }
