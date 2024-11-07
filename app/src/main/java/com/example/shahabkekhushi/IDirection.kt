@@ -8,7 +8,7 @@ import retrofit2.http.Query
 
 interface IDirection {
 
- @GET("/directions/v5/mapbox/walking/{startLon},{startLat};{endLon},{endLat}")
+ @GET("/directions/v5/mapbox/driving/{startLon},{startLat};{endLon},{endLat}")
  suspend fun getDirections
              (@Path("startLat") startLat:String,
               @Path("startLon") startLot:String,

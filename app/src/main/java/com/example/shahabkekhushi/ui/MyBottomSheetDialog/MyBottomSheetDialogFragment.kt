@@ -127,7 +127,7 @@ class MyBottomSheetDialogFragment : BottomSheetDialogFragment() {
         val dialog = dialog as? BottomSheetDialog
         dialog?.behavior?.apply {
             state = BottomSheetBehavior.STATE_HALF_EXPANDED
-            halfExpandedRatio = 0.2f
+            halfExpandedRatio = 0.5f
             isHideable = false
         }
     }

@@ -1,5 +1,4 @@
 package com.example.shahabkekhushi.ui.home
-
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -8,19 +7,16 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.example.shahabkekhushi.R
-import com.example.shahabkekhushi.api
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.OnSearchResultSelectedListener
 import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
@@ -34,9 +30,7 @@ import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.PolylineAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
-import com.mapbox.maps.plugin.annotation.generated.createPolylineAnnotationManager
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.core.MapboxNavigation
@@ -46,9 +40,6 @@ import com.mapbox.navigation.core.lifecycle.requireMapboxNavigation
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -61,16 +52,15 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private val navigationLocationProvider = NavigationLocationProvider()
     private var lastKnownLocation: com.mapbox.common.location.Location? = null
-    private val client = OkHttpClient() // Initialize OkHttpClient
-
+    private val client = OkHttpClient()
     private val mapboxAccessToken by lazy {
-        getString(R.string.mapbox_access_token) // Retrieve the Mapbox access token from resources
+        getString(R.string.mapbox_access_token)
     }
     private val mapStyles = arrayOf(
         Style.MAPBOX_STREETS,
         Style.SATELLITE_STREETS,
-        "mapbox://styles/mapbox/traffic-day-v2", // Custom URI
-        "mapbox://styles/mapbox/satellite-streets-v11" // Custom URI
+        "mapbox://styles/mapbox/traffic-day-v2",
+        "mapbox://styles/mapbox/satellite-streets-v11"
     )
 
     private var currentStyleIndex = 0
@@ -91,7 +81,6 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -99,52 +88,34 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
-
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
-
         initPointAnnotationManager()
-
-//        val bottomSheet = MyBottomSheetDialogFragment()
-//        bottomSheet.show(parentFragmentManager, bottomSheet.tag)
-//
-//        binding.showBottomSheetButton.setOnClickListener {
-//            val bottomSheet = MyBottomSheetDialogFragment()
-//            bottomSheet.show(parentFragmentManager, bottomSheet.tag)
-//        }
         val bottomSheet = MyBottomSheetDialogFragment()
         bottomSheet.setOnSearchResultSelectedListener(this)
         bottomSheet.show(parentFragmentManager, bottomSheet.tag)
-
         binding.showBottomSheetButton.setOnClickListener {
             val bottomSheet = MyBottomSheetDialogFragment()
             bottomSheet.setOnSearchResultSelectedListener(this)
             bottomSheet.show(parentFragmentManager, bottomSheet.tag)
         }
 
-
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
         initNavigation()
-
         binding.recenterButton.setOnClickListener {
             lastKnownLocation?.let { location ->
                 updateCamera(location)
             }
         }
-
         binding.changeStyleButton.setOnClickListener {
             cycleMapStyle()
         }
     }
-
 
     private val mapboxNavigation: MapboxNavigation by requireMapboxNavigation(
         onResumedObserver = object : MapboxNavigationObserver {
@@ -166,31 +137,24 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                 })
                 mapboxNavigation.startTripSession()
             }
-
             override fun onDetached(mapboxNavigation: MapboxNavigation) {
-
             }
         },
         onInitialize = this::initNavigation
     )
     private fun addPointAnnotation() {
-        // Create an instance of the Annotation API and get the PointAnnotationManager
         val annotationApi = binding.mapView.annotations
         val pointAnnotationManager = annotationApi.createPointAnnotationManager()
 
-        // Load the icon as a bitmap and resize it
         val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.location_pin_svgrepo_com)
         val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 30, 30, false) // Adjust width and height as needed
 
-        // Set options for the resulting point annotation
         val pointAnnotationOptions = PointAnnotationOptions()
             .withPoint(Point.fromLngLat(18.06, 59.31))
             .withIconImage(resizedBitmap)
 
-        // Add the point annotation to the map
         pointAnnotationManager.create(pointAnnotationOptions)
     }
-
 
     private fun initNavigation() {
         if (_binding == null) return
@@ -203,31 +167,18 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         }
     }
     private fun initPointAnnotationManager() {
-        // Initialize PointAnnotationManager once after the style is loaded
         pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
     }
     private fun cycleMapStyle() {
-        // Switch to the next style in the array
         currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size
-
-        // Apply the new style
         binding.mapView.mapboxMap.loadStyleUri(mapStyles[currentStyleIndex]) { style ->
-            // After the style is loaded, re-draw the route if it exists
             routePoints?.let { points ->
-                drawRoute(points) // Redraw the route on the new style
+                drawRoute(points)
             }
         }
     }
 
-
-
-
     private var routePoints: List<Point>? = null
-
-//    private fun cycleMapStyle() {
-//        currentStyleIndex = (currentStyleIndex + 1) % mapStyles.size
-//        binding.mapView.mapboxMap.loadStyle(mapStyles[currentStyleIndex])
-//    }
 
     private fun updateCamera(location: com.mapbox.common.location.Location) {
         val point = Point.fromLngLat(location.longitude, location.latitude)
@@ -247,17 +198,13 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
     private fun drawRoute(points: List<Point>) {
         val lineString = LineString.fromLngLats(points)
         binding.mapView.mapboxMap.getStyle { style ->
-            // Check if the source already exists
             if (style.getSource("route-source") == null) {
                 style.addSource(geoJsonSource("route-source") {
                     geometry(lineString)
                 })
             } else {
-                // Update the existing source's geometry
                 (style.getSource("route-source") as GeoJsonSource).geometry(lineString)
             }
-
-            // Check if the layer exists; if not, add it
             if (style.getLayer("route-layer") == null) {
                 style.addLayer(lineLayer("route-layer", "route-source") {
                     lineColor("#0019e3")
@@ -265,15 +212,10 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                 })
             }
         }
-        routePoints = points // Save the route points for re-drawing later
+        routePoints = points
     }
 
-
-
-
-
     private fun fetchRoute(origin: Point, destination: Point) {
-        // Fetch the new route from the API
         val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
                 "${origin.longitude()},${origin.latitude()};" +
                 "${destination.longitude()},${destination.latitude()}" +
@@ -295,15 +237,31 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
                             val route = routes.getJSONObject(0)
                             val geometry = route.getJSONObject("geometry")
                             val coordinates = geometry.getJSONArray("coordinates")
+
+                            val distanceInMeters = route.getDouble("distance")
+                            val durationInSeconds = route.getDouble("duration")
+
+                            val distanceInKm = distanceInMeters / 1000.0
+                            val durationInMinutes = durationInSeconds / 60.0
+
+                            val distanceText = String.format("%.2f km", distanceInKm)
+                            val durationText = String.format("%.2f min", durationInMinutes)
+                            requireActivity().runOnUiThread {
+                                binding.distanceTextView.text = distanceText
+                                binding.timeTextView.text = durationText
+
+                                binding.distanceTextView.visibility = View.VISIBLE
+                                binding.timeTextView.visibility = View.VISIBLE
+                            }
                             val points = mutableListOf<Point>()
                             for (i in 0 until coordinates.length()) {
                                 val coord = coordinates.getJSONArray(i)
                                 points.add(Point.fromLngLat(coord.getDouble(0), coord.getDouble(1)))
                             }
-                            // Draw the route immediately after fetching it
+
                             routePoints = points
                             requireActivity().runOnUiThread {
-                                drawRoute(points) // Immediately display the route
+                                drawRoute(points)
                             }
                         }
                     }
@@ -314,34 +272,22 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         })
     }
 
-
-
-
-
     override fun onSearchResultSelected(latitude: Double, longitude: Double) {
         val destination = Point.fromLngLat(longitude, latitude)
-
-        // Fetch and draw the route from current location to the destination
         lastKnownLocation?.let { currentLocation ->
             val origin = Point.fromLngLat(currentLocation.longitude, currentLocation.latitude)
-            fetchRoute(origin, destination) // Calls fetchRoute to update immediately
+            fetchRoute(origin, destination)
         }
 
-        // Clear any previous annotations
         pointAnnotationManager?.deleteAll()
-
-        // Load and resize icon
         val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.red_marker)
         val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 40, 50, false)
-
-        // Add the destination marker
         val pointAnnotationOptions = PointAnnotationOptions()
             .withPoint(destination)
             .withIconImage(resizedBitmap)
 
         pointAnnotationManager?.create(pointAnnotationOptions)
 
-        // Center camera on the searched location
         val cameraOptions = CameraOptions.Builder()
             .center(destination)
             .zoom(14.0)
@@ -353,18 +299,12 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
         )
     }
 
-
-
-
-
-
     override fun onDestroyView() {
         super.onDestroyView()
-        pointAnnotationManager?.deleteAll() // Clean up annotations
+        pointAnnotationManager?.deleteAll()
         _binding = null
     }
 }
 
 private fun GeoJsonSource.setGeoJson(geoJson: LineString?) {
-
 }
