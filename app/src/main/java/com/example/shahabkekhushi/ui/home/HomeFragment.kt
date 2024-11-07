@@ -316,9 +316,14 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
                             val distanceInKm = distanceInMeters / 1000.0
                             val durationInMinutes = durationInSeconds / 60.0
-
+                            val hours = durationInMinutes.toInt() / 60
+                            val minutes = (durationInMinutes % 60).toInt()
                             val distanceText = String.format("%.2f km", distanceInKm)
-                            val durationText = String.format("%.2f min", durationInMinutes)
+                            val durationText = if (hours > 0) {
+                                String.format("%d hr %d min", hours, minutes)
+                            } else {
+                                String.format("%d min", minutes)
+                            }
                             requireActivity().runOnUiThread {
                                 binding.distanceTextView.text = distanceText
                                 binding.timeTextView.text = durationText
