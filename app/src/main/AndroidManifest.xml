@@ -16,6 +16,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Shahabkekhushi"
         tools:targetApi="31">
+
+        <activity
+            android:name=".DiscoverActivity"
+            android:exported="false" />
         <activity
             android:name=".Dashboard"
             android:exported="false"

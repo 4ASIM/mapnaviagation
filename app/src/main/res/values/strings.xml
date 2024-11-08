@@ -18,4 +18,9 @@
     <string name="menu_home">Home</string>
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
+
+    <string name="discover_search_nearby">Search for cafes nearby</string>
+    <string name="discover_search_in_area">Search for cafes in selected area</string>
+    <string name="discover_search_error">Error happened during search request</string>
+    <string name="no_nearby_places_found">no_nearby_places_found</string>
 </resources>

@@ -139,7 +139,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginTop="30dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="30dp"
         app:layout_constraintBottom_toTopOf="@+id/changeStyleButton"
         app:layout_constraintEnd_toEndOf="@+id/mapView"
         app:srcCompat="@drawable/search_alt_1_svgrepo_com" />

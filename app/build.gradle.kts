@@ -57,6 +57,8 @@ dependencies {
     implementation("com.mapbox.navigationcore:navigation:3.5.0-beta.1")
     implementation("com.mapbox.navigationcore:ui-components:3.3.0")
 
+//    implementation ("com.mapbox.navigation:android:2..0")
+
     //search
     implementation ("com.mapbox.search:discover:2.5.0")
     implementation ("com.mapbox.search:place-autocomplete:2.5.0")

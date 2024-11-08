@@ -30,19 +30,6 @@ class MapFragment : Fragment() {
 
     private val navigationLocationProvider = NavigationLocationProvider()
 
-    private val locationObserver = object : LocationObserver {
-        override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
-            val enhancedLocation = locationMatcherResult.enhancedLocation
-            navigationLocationProvider.changePosition(
-                enhancedLocation,
-                locationMatcherResult.keyPoints
-            )
-            updateCamera(enhancedLocation)
-        }
-
-        override fun onNewRawLocation(rawLocation: com.mapbox.common.location.Location) {}
-    }
-
     private var _binding: FragmentMapBinding? = null
     private val binding get() = _binding!!
 
@@ -54,54 +41,7 @@ class MapFragment : Fragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding.mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-        initNavigation()
-    }
 
-    private val mapboxNavigation: MapboxNavigation by requireMapboxNavigation(
-        onResumedObserver = object : MapboxNavigationObserver {
-            @SuppressLint("MissingPermission")
-            override fun onAttached(mapboxNavigation: MapboxNavigation) {
-                mapboxNavigation.registerLocationObserver(locationObserver)
-                mapboxNavigation.startTripSession()
-            }
-
-            override fun onDetached(mapboxNavigation: MapboxNavigation) {
-                mapboxNavigation.unregisterLocationObserver(locationObserver)
-            }
-        },
-        onInitialize = this::initNavigation
-    )
-
-    private fun initNavigation() {
-        if (_binding == null) return
-        MapboxNavigationApp.setup {
-            NavigationOptions.Builder(requireContext()).build()
-        }
-        binding.mapView.location.apply {
-            setLocationProvider(navigationLocationProvider)
-            enabled = true
-        }
-    }
-
-    private fun updateCamera(location: com.mapbox.common.location.Location) {
-        val mapAnimationOptions = MapAnimationOptions.Builder().duration(1500L).build()
-        binding.mapView.camera.easeTo(
-            CameraOptions.Builder()
-                .center(Point.fromLngLat(location.longitude, location.latitude))
-                .zoom(14.0)
-                .padding(EdgeInsets(0.0, 0.0, 0.0, 0.0))
-                .build(),
-            mapAnimationOptions
-        )
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
