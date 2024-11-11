@@ -13,7 +13,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -64,11 +63,13 @@ class DiscoverFragment : Fragment() {
 
     private val categoryMap = mapOf(
         "Museums" to DiscoverQuery.Category.MUSEUMS,
-        "Coffee Shop" to DiscoverQuery.Category.COFFEE_SHOP_CAFE,
-        "Restaurant" to DiscoverQuery.Category.RESTAURANTS,
-        "Bar" to DiscoverQuery.Category.BARS,
+        "Banks" to DiscoverQuery.Category.ATM,
+        "Hospitals" to DiscoverQuery.Category.HOSPITAL,
+        "Parks" to DiscoverQuery.Category.PARKS,
         "Hotel" to DiscoverQuery.Category.HOTEL,
-        "Hospital" to DiscoverQuery.Category.HOSPITAL
+        "Petrol" to DiscoverQuery.Category.GAS_STATION,
+        "Restaurant" to DiscoverQuery.Category.RESTAURANTS,
+        "Parkings" to DiscoverQuery.Category.PARKING
     )
 
     private fun defaultDeviceLocationProvider(): LocationProvider =
@@ -84,7 +85,11 @@ class DiscoverFragment : Fragment() {
     private fun Context.isPermissionGranted(permission: String): Boolean =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         binding = FragmentDiscoverBinding.inflate(inflater, container, false)
 
         discover = Discover.create()
@@ -100,7 +105,8 @@ class DiscoverFragment : Fragment() {
                     enabled = true
                 }
 
-                mapView.location.addOnIndicatorPositionChangedListener(object : OnIndicatorPositionChangedListener {
+                mapView.location.addOnIndicatorPositionChangedListener(object :
+                    OnIndicatorPositionChangedListener {
                     override fun onIndicatorPositionChanged(point: Point) {
                         mapboxMap.setCamera(
                             CameraOptions.Builder()
@@ -142,22 +148,25 @@ class DiscoverFragment : Fragment() {
         }
 
 
-        val MuseumButton = binding.cvBanks
-        val coffeeShopButton = binding.cvBanks
-        val restaurantButton = binding.cvRestaurant
-        val barButton = binding.cvHospital
+        val museumButton = binding.cvMuseum
+        val bankButton = binding.cvBanks
+        val hospitalButton = binding.cvHospital
+        val parksButton = binding.cvPark
         val hotelButton = binding.cvHotel
-        val hospitalButton = binding.ivHospital
+        val petrolButton = binding.cvPetrolpump
+        val restaurantButton = binding.cvRestaurant
+        val parkingButton = binding.cvParking
+
 
         val searchButtons = listOf(
-            "Museums" to DiscoverQuery.Category.MUSEUMS,
-            "Coffee Shop" to DiscoverQuery.Category.COFFEE_SHOP_CAFE,
-
-            coffeeShopButton to "Coffee Shop",
+            bankButton to "Banks",
+            hospitalButton to "Hospitals",
+            parksButton to "Parks",
             restaurantButton to "Restaurant",
-            barButton to "Bar",
             hotelButton to "Hotel",
-            hospitalButton to "Hospital"
+            petrolButton to "Petrol",
+            parkingButton to "Parkings",
+
         )
 
         searchButtons.forEach { (button, category) ->
@@ -309,9 +318,16 @@ class DiscoverFragment : Fragment() {
                 country = country
             )
         }
+
         fun CoordinateBounds.toBoundingBox(): BoundingBox {
-            return BoundingBox.fromLngLats(southwest.longitude(), southwest.latitude(), northeast.longitude(), northeast.latitude())
+            return BoundingBox.fromLngLats(
+                southwest.longitude(),
+                southwest.latitude(),
+                northeast.longitude(),
+                northeast.latitude()
+            )
         }
+
         fun DiscoverResult.toSearchPlace(): SearchPlace {
             return SearchPlace(
                 id = name + UUID.randomUUID().toString(),

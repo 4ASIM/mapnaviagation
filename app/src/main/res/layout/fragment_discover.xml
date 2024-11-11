@@ -417,19 +417,6 @@
     </HorizontalScrollView>
 
 
-    <Button
-        android:id="@+id/search_nearby"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginBottom="30dp"
-        android:background="@drawable/card_background"
-        android:text="discover_search_nearby"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        />
-
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/search_container_view"
