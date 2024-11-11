@@ -416,7 +416,18 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/loadingAnimationView"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:visibility="gone"
+        app:lottie_autoPlay="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/locationnearby"/>
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/search_container_view"

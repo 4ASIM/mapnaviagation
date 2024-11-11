@@ -70,6 +70,7 @@ class DiscoverFragment : Fragment() {
         "Petrol" to DiscoverQuery.Category.GAS_STATION,
         "Restaurant" to DiscoverQuery.Category.RESTAURANTS,
         "Parkings" to DiscoverQuery.Category.PARKING
+
     )
 
     private fun defaultDeviceLocationProvider(): LocationProvider =
@@ -92,6 +93,7 @@ class DiscoverFragment : Fragment() {
     ): View? {
         binding = FragmentDiscoverBinding.inflate(inflater, container, false)
 
+
         discover = Discover.create()
         locationProvider = defaultDeviceLocationProvider()
 
@@ -113,6 +115,7 @@ class DiscoverFragment : Fragment() {
                                 .center(point)
                                 .zoom(14.0)
                                 .build()
+
                         )
 
                         mapView.location.removeOnIndicatorPositionChangedListener(this)
@@ -123,19 +126,22 @@ class DiscoverFragment : Fragment() {
 
         fun searchNearbyPlaces(category: String) {
             val categoryQuery = categoryMap[category]
+
             if (categoryQuery != null) {
                 locationProvider.getLastLocation { location ->
                     if (location == null) return@getLastLocation
-
+                    showLoadingAnimation()
                     lifecycleScope.launchWhenStarted {
                         val response = discover.search(
                             query = categoryQuery,
                             proximity = location.toPoint(),
                             options = DiscoverOptions(limit = 20)
+
                         )
 
                         response.onValue { results ->
                             mapMarkersManager.showResults(results)
+                            hideLoadingAnimation()
                         }.onError { e ->
                             Log.d("DiscoverApiExample", "Error during search request", e)
                             requireContext().showToast(R.string.discover_search_error)
@@ -172,6 +178,7 @@ class DiscoverFragment : Fragment() {
         searchButtons.forEach { (button, category) ->
             button.setOnClickListener {
                 searchNearbyPlaces(category)
+
             }
         }
 
@@ -209,6 +216,13 @@ class DiscoverFragment : Fragment() {
 
         return binding.root
     }
+    private fun showLoadingAnimation() {
+        binding.loadingAnimationView.visibility = View.VISIBLE
+    }
+    fun hideLoadingAnimation() {
+        binding.loadingAnimationView.visibility = View.GONE
+    }
+
 
     private fun LocationProvider.userDistanceTo(destination: Point, callback: (Double?) -> Unit) {
         getLastLocation { location ->
@@ -239,6 +253,8 @@ class DiscoverFragment : Fragment() {
                 true
             }
         }
+
+
 
         private fun Context.bitmapFromDrawableRes(@DrawableRes resId: Int): Bitmap =
             BitmapFactory.decodeResource(resources, resId)
