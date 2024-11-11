@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -190,6 +192,8 @@ class DiscoverFragment : Fragment() {
         searchPlaceView = binding.searchPlaceView.apply {
             initialize(CommonSearchViewConfiguration(DistanceUnitType.IMPERIAL))
             isFavoriteButtonVisible = false
+            isNavigateButtonVisible=false
+            isShareButtonVisible=false
             addOnCloseClickListener {
                 mapMarkersManager.adjustMarkersForClosedCard()
                 hide()
@@ -241,7 +245,8 @@ class DiscoverFragment : Fragment() {
         private val annotations = mutableMapOf<String, DiscoverResult>()
         private val mapboxMap: MapboxMap = mapView.getMapboxMap()
         private val pointAnnotationManager = mapView.annotations.createPointAnnotationManager(null)
-        private val pinBitmap = mapView.context.bitmapFromDrawableRes(R.drawable.red_marker)
+        private val pinBitmap = mapView.context.bitmapFromDrawableRes(R.drawable.location_pin_svgrepo_com)
+
 
         var onResultClickListener: ((DiscoverResult) -> Unit)? = null
 
@@ -256,8 +261,8 @@ class DiscoverFragment : Fragment() {
 
 
 
-        private fun Context.bitmapFromDrawableRes(@DrawableRes resId: Int): Bitmap =
-            BitmapFactory.decodeResource(resources, resId)
+//        private fun Context.bitmapFromDrawableRes(@DrawableRes resId: Int): Bitmap =
+//            BitmapFactory.decodeResource(resources, resId)
 
         fun clearMarkers() {
             pointAnnotationManager.deleteAll()
@@ -288,13 +293,17 @@ class DiscoverFragment : Fragment() {
 
             val coordinates = ArrayList<Point>(results.size)
             results.forEach { result ->
-                val options = PointAnnotationOptions()
-                    .withPoint(result.coordinate)
-                    .withIconImage(pinBitmap)
-                    .withIconAnchor(IconAnchor.BOTTOM)
+                val options = pinBitmap?.let {
+                    PointAnnotationOptions()
+                        .withPoint(result.coordinate)
+                        .withIconImage(it)
+                        .withIconAnchor(IconAnchor.BOTTOM)
+                }
 
-                val annotation = pointAnnotationManager.create(options)
-                annotations[annotation.id] = result
+                val annotation = options?.let { pointAnnotationManager.create(it) }
+                if (annotation != null) {
+                    annotations[annotation.id] = result
+                }
                 coordinates.add(result.coordinate)
             }
 
@@ -343,7 +352,23 @@ class DiscoverFragment : Fragment() {
                 northeast.latitude()
             )
         }
-
+        fun Context.bitmapFromDrawableRes(@DrawableRes resId: Int): Bitmap? {
+            return try {
+                val drawable = resources.getDrawable(resId, theme)
+                if (drawable is BitmapDrawable) {
+                    drawable.bitmap
+                } else {
+                    val bitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    drawable.setBounds(0, 0, canvas.width, canvas.height)
+                    drawable.draw(canvas)
+                    bitmap
+                }
+            } catch (e: Exception) {
+                Log.e("bitmapFromDrawableRes", "Error decoding resource: ${e.message}")
+                null
+            }
+        }
         fun DiscoverResult.toSearchPlace(): SearchPlace {
             return SearchPlace(
                 id = name + UUID.randomUUID().toString(),

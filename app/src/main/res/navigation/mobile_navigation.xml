@@ -29,5 +29,5 @@
     <fragment
         android:id="@+id/discoverFragment"
         android:name="com.example.shahabkekhushi.ui.home.DiscoverFragment"
-        android:label="DiscoverFragment" />
+        android:label="Search Nearby" />
 </navigation>

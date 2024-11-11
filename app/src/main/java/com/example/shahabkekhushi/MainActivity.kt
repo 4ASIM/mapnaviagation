@@ -18,7 +18,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, Dashboard::class.java)
             startActivity(intent)
             finish()
-        }, 1000)
+        }, 5000)
     }
 
 }
