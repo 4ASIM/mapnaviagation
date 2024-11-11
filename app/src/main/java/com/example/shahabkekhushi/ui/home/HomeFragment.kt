@@ -385,11 +385,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
     override fun onDestroyView() {
         super.onDestroyView()
         pointAnnotationManager?.deleteAll()
-//        mapboxNavigation.stopTripSession()
         _binding = null
     }
 }
 
 private fun GeoJsonSource.setGeoJson(geoJson: LineString?) {
-
 }
