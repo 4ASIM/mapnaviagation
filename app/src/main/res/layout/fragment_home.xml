@@ -124,8 +124,8 @@
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/changeStyleButton"
-        android:layout_width="1dp"
-        android:layout_height="1dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="30dp"
         android:layout_marginBottom="30dp"
@@ -144,6 +144,18 @@
         app:layout_constraintBottom_toTopOf="@+id/changeStyleButton"
         app:layout_constraintEnd_toEndOf="@+id/mapView"
         app:srcCompat="@drawable/search_alt_1_svgrepo_com" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fb_Nearby"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="30dp"
+        app:layout_constraintBottom_toTopOf="@+id/showBottomSheetButton"
+        app:layout_constraintEnd_toEndOf="@+id/mapView"
+        app:srcCompat="@drawable/find_location_svgrepo_com" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cv_walking"

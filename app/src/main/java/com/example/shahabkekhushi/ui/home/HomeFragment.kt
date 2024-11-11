@@ -11,6 +11,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.example.shahabkekhushi.R
 import com.example.shahabkekhushi.databinding.FragmentHomeBinding
 import com.example.shahabkekhushi.ui.MyBottomSheetDialog.MyBottomSheetDialogFragment
@@ -142,6 +143,9 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             }
         }
 
+        binding.fbNearby.setOnClickListener {
+            findNavController().navigate(R.id.action_nav_home_to_discoverFragment)
+        }
 
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->

@@ -9,7 +9,11 @@
         android:id="@+id/nav_home"
         android:name="com.example.shahabkekhushi.ui.home.HomeFragment"
         android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_nav_home_to_discoverFragment"
+            app:destination="@id/discoverFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_gallery"
@@ -22,4 +26,8 @@
         android:name="com.example.shahabkekhushi.ui.slideshow.SlideshowFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
+    <fragment
+        android:id="@+id/discoverFragment"
+        android:name="com.example.shahabkekhushi.ui.home.DiscoverFragment"
+        android:label="DiscoverFragment" />
 </navigation>
