@@ -1,5 +1,6 @@
 package com.example.shahabkekhushi.ui.home
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -222,14 +223,14 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
 
     private fun initNavigation() {
         if (_binding == null) return
-        MapboxNavigationApp.setup {
-            NavigationOptions.Builder(requireContext()).build()
-        }
+
+
         binding.mapView.location.apply {
             setLocationProvider(navigationLocationProvider)
             enabled = true
         }
     }
+
     private fun initPointAnnotationManager() {
         pointAnnotationManager = binding.mapView.annotations.createPointAnnotationManager()
     }
@@ -375,10 +376,16 @@ class HomeFragment : Fragment(), OnSearchResultSelectedListener {
             MapAnimationOptions.Builder().duration(1500L).build()
         )
     }
-
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        MapboxNavigationApp.setup {
+            NavigationOptions.Builder(context).build()
+        }
+    }
     override fun onDestroyView() {
         super.onDestroyView()
         pointAnnotationManager?.deleteAll()
+//        mapboxNavigation.stopTripSession()
         _binding = null
     }
 }
